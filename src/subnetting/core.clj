@@ -32,7 +32,8 @@
   [str]
   (map to-int (s/split str #"\.")))
 
-(def int-ip->str (comp vec-ip->str int-ip->vec))
+(def int-ip->str
+  (comp vec-ip->str int-ip->vec))
 
 (defn rev
   "Reverses vector"
@@ -44,38 +45,27 @@
   [x n]
   (int (Math/pow x n)))
 
-(defn max-power-2
-  "Returns a number x where (x >= n) && (2^k == x)  && (2^(k-1) < x)"
-	[n]
-	(loop [pow 2]
-		(if (<= pow n)
-			(recur (bit-shift-left pow 1))
-			(bit-shift-right pow 1))))
+(defn smallest-pow2
+  "Returns the smallest power of 2 of n"
+  [n]
+  (-> n
+      bit-not
+      inc
+      (bit-and n)))
 
-(defn split-max
-	[n]
-	(loop [subs []
-         num n
-         power (max-power-2 num)]
-		(if (> num 0)
-			(recur (conj subs power)
-             (- num power)
-             (max-power-2 (- num power)))
-			subs)))
-
-;(print "Network address: ")
-(def network-address [10 0 0 0])
-;(def network-address (str-ip->vec (read-line)))
-
-;(print "Prefix: ")
-(def prefix 24)
-;(def prefix (to-int (read-line)))
-
-;(print "Interfaces per subnet: ")
-(def subnets [1000 127])
-;(def subnets (sort (filter pos? (map to-int (s/split (read-line) #"\ ")))))
+(defn factorize-2
+  "Factorizes a number down to the powers of 2 it is made up of"
+  [n]
+  (loop [number n
+         factors []]
+    (if (zero? number)
+      factors
+      (let [factor (smallest-pow2 number)
+            new-number (bit-xor number factor)]
+        (recur new-number (conj factors factor))))))
 
 (defn p-compl
+  "Complement of p with respect to 32, used to translate the subnet IP requirements into prefix "
   [p]
   (- 32 p))
 
@@ -98,7 +88,7 @@
         availabilities (map #(exp 2 (p-compl %)) sub-prefixes)
         subnet-ips (sort (reduce #(cons (+ (first %1) %2) %1) [ip] availabilities))
         str-subnets (map #(str (int-ip->str %1) "/" %2) (butlast subnet-ips) sub-prefixes)]
-    (if (> ip  (- max-ip  (apply + availabilities)))
+    (if (> ip (- max-ip  (apply + availabilities)))
       [[] 0]
       [str-subnets (last subnet-ips)])))
 
@@ -112,9 +102,18 @@
 
 (defn main
   []
+  (print "Network address: ")
+  (def network-address (str-ip->vec (read-line)))
+
+  (print "Prefix: ")
+  (def prefix (to-int (read-line)))
+
+  (print "Interfaces per subnet: ")
+  (def subnets (sort (filter pos? (map to-int (s/split (read-line) #"\ ")))))
+
   (let [[subnet-ips last-ip] (subnet network-address prefix subnets)
         ips-remaining (- max-ip last-ip)
-        max-free-subnets (split-max ips-remaining)]
+        total-free-subnets (factorize-2 ips-remaining)]
     (if (zero? last-ip)
       (println "Error: interfaces exceed network capacity")
       (do
@@ -124,7 +123,7 @@
           (do (run! println subnet-ips)
               (println "--------------------------")
               (println "Available Networks")
-              (run! println (rev-subnet last-ip prefix max-free-subnets))))))))
+              (run! println (rev-subnet last-ip prefix total-free-subnets))))))))
 
-(main)
+;(main)
 
