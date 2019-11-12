@@ -45,6 +45,15 @@
   [x n]
   (int (Math/pow x n)))
 
+(print "Network address: ")
+(def network-address (str-ip->vec (read-line)))
+
+(print "Prefix: ")
+(def prefix (to-int (read-line)))
+
+(print "Interfaces per subnet: ")
+(def subnets (sort (filter pos? (map to-int (s/split (read-line) #"\ ")))))
+
 (defn smallest-pow2
   "Returns the smallest power of 2 of n"
   [n]
@@ -102,15 +111,6 @@
 
 (defn main
   []
-  (print "Network address: ")
-  (def network-address (str-ip->vec (read-line)))
-
-  (print "Prefix: ")
-  (def prefix (to-int (read-line)))
-
-  (print "Interfaces per subnet: ")
-  (def subnets (sort (filter pos? (map to-int (s/split (read-line) #"\ ")))))
-
   (let [[subnet-ips last-ip] (subnet network-address prefix subnets)
         ips-remaining (- max-ip last-ip)
         total-free-subnets (factorize-2 ips-remaining)]
@@ -125,5 +125,5 @@
               (println "Available Networks")
               (run! println (rev-subnet last-ip prefix total-free-subnets))))))))
 
-;(main)
+(main)
 
